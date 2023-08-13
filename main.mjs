@@ -1,5 +1,5 @@
-const CLIENT_ID = '47_xpFFwqMFf_mwiOqL4sg';
-const REDIRECT_URL = 'http://localhost:3000';
+const CLIENT_ID = '4SuAmyL8hg2wtuwojr7CSg';
+const REDIRECT_URL = 'https://kissreceiver.github.io/rbox';
 const SCOPES = 'read';
 const STORAGE_KEY = 'token';
 
@@ -150,7 +150,7 @@ function authenticate() {
 }
 
 async function fetchPosts(token, after) {
-    let url = `https://oauth.reddit.com/new`;
+    let url = `https://oauth.reddit.com/hot`;
     if (after) {
         url += `?after=${after}`;
     }
