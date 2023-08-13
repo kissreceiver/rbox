@@ -1,0 +1,55 @@
+html,body {
+    margin: 0;
+    height: 100%;
+    background-color: black;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#root>div {
+    position: relative;
+}
+
+#root>div>span {
+    position: absolute;
+    color: white;
+    font-family: sans-serif;
+    text-shadow: 0px 0px 5px black;
+}
+
+#root>div>span.author {
+    top: 0;
+    left: 5px;
+}
+#root>div>span.subreddit {
+    top: 0;
+    right: 5px;
+}
+#root>div>span.created {
+    bottom: 5px;
+    left: 5px;
+}
+
+#root>div>span.post-title {
+    bottom: 40%;
+    left: 0;
+    right: 0;
+    padding: 3px 15px 3px 15px;
+    background-color: rgba(40,40,40, 0.5);
+    text-align: center;
+    font-size: 110%;
+}
+
+#root img {
+    max-width: 100vw;
+    max-height: 90vh;
+}
+
+#root video {
+    max-width: 100vw;
+    max-height: 90vh;
+}
