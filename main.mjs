@@ -1,14 +1,20 @@
 const CLIENT_ID = '4SuAmyL8hg2wtuwojr7CSg';
 const REDIRECT_URL = 'https://kissreceiver.github.io/rbox';
-const SCOPES = 'read';
+const SCOPES = 'read history';
 const STORAGE_KEY = 'token';
 
 let fetching = false;
+let fetchingTo = null;
 main();
 
 async function main() {
     const token = checkAndStoreToken();
+
+    let collection = getCollectionFromUrl();
+
     if (token) {
+        loadMultis(token);
+
         let observer;
         let options = {
             root: null,
@@ -26,16 +32,27 @@ async function main() {
             });
         }, options);
 
+
         let after = '';
-        after = await fetchMore(token, observer, after);
+        after = await fetchMore(token, observer, collection, after);
 
         window.document.onscroll = async function(ev) {
             if (fetching) return;
 
             if(window.scrollY + window.innerHeight + 200 > document.body.scrollHeight) {
-                after = await fetchMore(token, observer, after);
+                after = await fetchMore(token, observer, collection, after);
             }
         };
+
+        listenForHashChange(async (c) => {
+            after = '';
+            collection = c
+            const root = document.getElementById('root');
+            fetching = false;
+            clearTimeout(fetchingTo);
+            root.innerHTML = '';
+            after = await fetchMore(token, observer, collection, after);
+        });
 
     } else {
         const a = document.createElement('a');
@@ -46,20 +63,20 @@ async function main() {
     }
 }
 
-async function fetchMore(token, observer, after = '') {
+async function fetchMore(token, observer, col, after = '') {
     if (fetching) return after;
     fetching = true;
     console.log('Fetching more! after = ', after);
-    const {after: newAfter, posts} = await fetchPosts(token, after);
+    const {after: newAfter, posts} = await fetchPosts(token, after, col);
     const postEls = posts.map(post => {
         const div = document.createElement('div');
         if (post.video) {
             const video = document.createElement('video');
             video.setAttribute('src', post.video);
-            video.setAttribute('autoplay', '');
-            video.setAttribute('loop', '');
-            video.setAttribute('muted', '');
-            video.setAttribute('playsinline', '');
+            video.setAttribute('autoplay', 'true');
+            video.setAttribute('loop', 'true');
+            video.setAttribute('muted', 'true');
+            video.setAttribute('playsinline', 'true');
             div.appendChild(video);
             observer.observe(div);
         } else {
@@ -68,12 +85,12 @@ async function fetchMore(token, observer, after = '') {
             div.appendChild(img);
         }
         const user = document.createElement('span');
-        user.innerHTML = post.author;
+        user.innerHTML = `<a href="#/user/${post.author}/submitted">${post.author}</a>`;
         user.classList.add('author');
         div.appendChild(user);
 
         const subreddit = document.createElement('span');
-        subreddit.innerText = 'r/' + post.subreddit;
+        subreddit.innerHTML = `<a href="#/r/${post.subreddit}">r/${post.subreddit}</a>`;
         subreddit.classList.add('subreddit');
         div.appendChild(subreddit);
 
@@ -87,8 +104,11 @@ async function fetchMore(token, observer, after = '') {
         title.classList.add('post-title');
         div.appendChild(title);
 
-        setTimeout(() => fetching = false, 1000);
-        fetching = false;
+        fetchingTo = setTimeout(() => {
+            fetching = false;
+            fetchingTo = null;
+        }, 3000);
+
         return div;
     });
     const root = document.getElementById('root');
@@ -100,6 +120,16 @@ async function fetchMore(token, observer, after = '') {
     }
 
     return newAfter;
+}
+
+async function loadMultis(token) {
+    const multis = await fetchMultis(token);
+    const mdiv = document.getElementById('multis');
+    multis.forEach(m => {
+        const mspan = document.createElement('span');
+        mspan.innerHTML = `<a href="#${m.path}">${m.name}</a>`;
+        mdiv.appendChild(mspan);
+    });
 }
 
 function toRelativeTime(date) {
@@ -149,8 +179,19 @@ function authenticate() {
     return `https://www.reddit.com/api/v1/authorize?client_id=${CLIENT_ID}&response_type=token&state=helloworld&redirect_uri=${REDIRECT_URL}&scope=${SCOPES}`;
 }
 
-async function fetchPosts(token, after) {
-    let url = `https://oauth.reddit.com/hot`;
+async function fetchMultis(token) {
+    let url = `https://oauth.reddit.com/api/multi/mine`;
+    const response = await fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    const body = await response.json();
+    return body.map(m => ({path: m.data.path, name: m.data.display_name}));
+}
+
+async function fetchPosts(token, after, col) {
+    let url = `https://oauth.reddit.com${col}`;
     if (after) {
         url += `?after=${after}`;
     }
@@ -180,4 +221,21 @@ async function fetchPosts(token, after) {
     });
 
     return { after: body.data.after, posts };
+}
+
+function getCollectionFromUrl() {
+    const col = window.location.hash.substring(1);
+    console.log(col);
+    return col;
+}
+
+function listenForHashChange(h) {
+    window.addEventListener(
+      "hashchange",
+      () => {
+        console.log("The hash has changed!");
+        h(getCollectionFromUrl());
+      },
+      false,
+    );
 }

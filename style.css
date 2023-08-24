@@ -4,6 +4,11 @@ html,body {
     background-color: black;
 }
 
+a {
+    color: white;
+    text-decoration: none;
+}
+
 #root {
     display: flex;
     flex-direction: column;
@@ -52,4 +57,9 @@ html,body {
 #root video {
     max-width: 100vw;
     max-height: 90vh;
+}
+
+#multis {
+    display: flex;
+    justify-content: space-between;
 }
