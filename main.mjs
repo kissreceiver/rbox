@@ -193,7 +193,11 @@ async function fetchMultis(token) {
 async function fetchPosts(token, after, col) {
     let url = `https://oauth.reddit.com${col}`;
     if (after) {
-        url += `?after=${after}`;
+        if (!url.includes("?")) {
+            url += `?after=${after}`;
+        } else {
+            url += `&after=${after}`;
+        }
     }
     const response = await fetch(url, {
         headers: {
